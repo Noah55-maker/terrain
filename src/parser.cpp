@@ -1,12 +1,11 @@
-/* Data from https://portal.opentopography.org/apidocs/#/Public/getUsgsDem
-*/
-
+// Data from https://portal.opentopography.org/apidocs/#/Public/getUsgsDem
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <utility>
+#include <vector>
 
 const std::string fileName = "larger-data.asc";
 const int data_separation = 30; // 30 meters = 1 arc-second
@@ -122,4 +121,5 @@ int main(int argc, char **argv) {
     printf("maxPos: x=%d, y=%d\th=%f\n", maxPos.first, maxPos.second, maxVal);
     printf("maxCoord: "); printCoord(maxCoord); printf("\n");
 
+    return 0;
 }
