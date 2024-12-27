@@ -1,125 +1,89 @@
 // Data from https://portal.opentopography.org/apidocs/#/Public/getUsgsDem
-#include <cstdio>
-#include <cstdlib>
+#include <cmath>
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <utility>
 #include <vector>
 
-const std::string fileName = "larger-data.asc";
-const int data_separation = 30; // 30 meters = 1 arc-second
-const int NO_DATA_VALUE = -999999;
+#include "map.h"
 
-std::string unneeded;
+#define PI 3.14159265358979
 
-class MapData {
-public:
-    int cols, rows;
-    double x_ll, y_ll; // lower left corner
-    double x_ur, y_ur;
-    double cellSize;
-    std::vector<std::vector<double> > map;
-    std::vector<std::vector<int> > mapMeters;
-
-    bool isMissingData;
-
-    // double data_separation = 1 / cellSize;
-
-    MapData(std::string fileName) {
-        std::ifstream fin(fileName);
-
-        fin >> unneeded >> cols >> unneeded >> rows;
-        fin >> unneeded >> x_ll >> unneeded >> y_ll;
-        fin >> unneeded >> cellSize;
-        fin >> unneeded >> unneeded; // "no data" value
-
-        x_ur = x_ll + cellSize * cols;
-        y_ur = y_ll + cellSize * rows;
-
-        map = std::vector<std::vector<double> >(rows);
-        mapMeters = std::vector<std::vector<int> >(rows);
-
-        isMissingData = false;
-        for (int i = 0; i < rows; i++) {
-            map[i] = std::vector<double>(cols);
-            mapMeters[i] = std::vector<int>(cols);
-
-            for (int j = 0; j < cols; j++) {
-                fin >> map[i][j];
-                mapMeters[i][j] = (int) (map[i][j] * data_separation);
-                if (map[i][j] == NO_DATA_VALUE) {
-                    isMissingData = true;
-                }
-            }
-        }
-        if (isMissingData) {
-            std::wcout << "Warning: missing data\n";
-            std::wcout << "Proceed with caution\n";
-        }
-
-        fin.close();
-    }
-
-    std::pair<double, double> toCoordinate(std::pair<int, int> position) {
-        return toCoordinate(position.first, position.second);
-    }
-
-    std::pair<double, double> toCoordinate(int x, int y) {
-        return std::make_pair(x_ll + cellSize * x, y_ur - cellSize * y);
-    }
-};
-
-void printCoord(std::pair<double, double> coord) {
-    char longitudeDir = (coord.first >= 0) ? 'E' : 'W';
-    char lattitudeDir = (coord.second >= 0) ? 'N' : 'S';
-
-    printf("(%.5f %c, %.5f %c)", std::abs(coord.second), lattitudeDir, std::abs(coord.first), longitudeDir);
-}
-
-void printPosition(MapData map, int i, int j) {
-    printCoord(map.toCoordinate(j, i));
-}
+const double HORIZONTAL_FOV = PI / 3; /* 120 degrees */
+const double MIN_VERT_FOV = -PI / 9; /* -20 degrees */
+const double MAX_VERT_FOV = PI / 6; /* +30 degrees */
 
 int main(int argc, char **argv) {
+    std::string fileName = "larger-data.asc";
+    if (argc > 1) {
+        fileName = argv[1];
+    }
     MapData map(fileName);
 
-    std::cout << "Lower Left: ";
-    printCoord(std::make_pair(map.x_ll, map.y_ll));
-    std::cout << '\n' << "Upper Right: ";
-    printCoord(std::make_pair(map.x_ur, map.y_ur));
-    std::cout << "\n\n";
+    std::cout << "Lower Left: " << map.llCoord << '\n';
+    std::cout << "Upper Right: " << map.urCoord << "\n\n";
 
+    std::cout << "Enter N/S-coord, then E/W-coord" << std::endl;
+    double ns, ew;
+    std::cin >> ns >> ew;
+    Coord initialCoord = Coord(ns, ew);
+    std::pair<int,int> closest = map.closestDataPoint(initialCoord);
+    std::cout << "closest coords: " << map.toCoordinate(closest) << "\nh=" << map.get(closest) << "\n\n";
 
-    double minVal = -NO_DATA_VALUE, maxVal = NO_DATA_VALUE;
-    std::pair<int, int> minPos, maxPos;
-    for (int i = 0; i < map.rows; i++) {
-        for (int j = 0; j < map.cols; j++) {
-            if (map.map[i][j] < minVal) {
-                minVal = map.map[i][j];
-                minPos = std::make_pair(j, i);
-            }
-            if (map.map[i][j] > maxVal) {
-                maxVal = map.map[i][j];
-                maxPos = std::make_pair(j, i);
-            }
-        }
+    std::vector<double> dirs;
+    for (double i = 0; i < 360; i+=.2) {
+        dirs.push_back(i * PI / 180);
     }
 
-    std::cout << map.map[0][0] << ' ' << map.map[0][map.cols-1] << '\n';
-    std::cout << map.map[map.rows-1][0] << ' ' << map.map[map.rows-1][map.cols-1] << '\n';
+    std::vector<std::pair<double, double> > deltas(dirs.size());
+    std::vector<std::vector<Coord> > positions(dirs.size());
+    std::vector<std::vector<double> > heightLine(dirs.size());
 
+    for (int i = 0; i < dirs.size(); i++) {
+        deltas[i] = std::make_pair(cos(dirs[i]) * map.cellSize / 2, sin(dirs[i]) * map.cellSize / 2);
+        Coord currCoord = Coord(initialCoord);
 
-    std::cout << '\n';
-    std::cout << "min: " << minVal << ", max: " << maxVal << '\n';
+        heightLine[i] = std::vector<double>(1);
+        positions[i] = std::vector<Coord>(1);
 
-    std::pair<double,double> minCoord = map.toCoordinate(minPos);
-    std::pair<double,double> maxCoord = map.toCoordinate(maxPos);
+        closest = map.closestDataPoint(currCoord);
+        heightLine[i][0] = map.get(closest);
+        positions[i][0] = currCoord;
 
-    printf("minPos: x=%d, y=%d\th=%f\n", minPos.first, minPos.second, minVal);
-    printf("minCoord: "); printCoord(minCoord); printf("\n");
-    printf("maxPos: x=%d, y=%d\th=%f\n", maxPos.first, maxPos.second, maxVal);
-    printf("maxCoord: "); printCoord(maxCoord); printf("\n");
+        while (currCoord.longitude > map.x_ll && currCoord.longitude < map.x_ur && currCoord.latitude > map.y_ll && currCoord.latitude < map.y_ur) {
+            closest = map.closestDataPoint(currCoord);
+            double currHeight = map.get(closest);
+            if (currHeight > heightLine[i].back()) {
+                heightLine[i].push_back(currHeight);
+                positions[i].push_back(currCoord);
+            }
+
+            currCoord.longitude += deltas[i].first;
+            currCoord.latitude += deltas[i].second;
+        }
+
+        double largestAngle = 0;
+        double la_dist = 0;
+        int largestAngleIndex;
+        for (int j = 1; j < positions[i].size(); j++) {
+            double deltaX = (positions[i][j].longitude - initialCoord.longitude) * 3600 * 30;
+            double deltaY = (positions[i][j].latitude - initialCoord.latitude) * 3600 * 30;
+            double deltaHeight = heightLine[i][j] - heightLine[i][0];
+            double dist = sqrt(deltaX*deltaX + deltaY*deltaY);
+            double angleDeg = atan(deltaHeight / dist) * 180 / PI;
+
+            if (angleDeg > largestAngle) {
+                largestAngle = angleDeg;
+                largestAngleIndex = j;
+                la_dist = dist;
+            }
+        }
+        std::cout << "Direction: " << dirs[i]*180/PI << " deg" << '\n';
+        // std::cout << heightLine[i].size() << " data points" << '\n';
+        std::cout << "largest angle=" << largestAngle << ", h=" << heightLine[i][largestAngleIndex] << ", d=" << la_dist << " at ";
+        std::cout << positions[i][largestAngleIndex] << "\n\n";
+        // std::cout << dirs[i]/PI - 1 << ", " << largestAngle << ",\n";
+    }
 
     return 0;
 }
