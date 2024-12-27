@@ -1,3 +1,4 @@
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -33,10 +34,6 @@ public:
 
         latitudeDir = 'N';
         longitudeDir = 'E';
-    }
-
-    void printCoord() {
-        printf("(%.5f°%c, %.5f°%c)", std::abs(latitude), latitudeDir, std::abs(longitude), longitudeDir);
     }
 };
 

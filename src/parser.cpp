@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
 
         double largestAngle = 0;
         double la_dist = 0;
-        int largestAngleIndex;
+        int largestAngleIndex = 0;
         for (int j = 1; j < positions[i].size(); j++) {
             double deltaX = (positions[i][j].longitude - initialCoord.longitude) * 3600 * 30;
             double deltaY = (positions[i][j].latitude - initialCoord.latitude) * 3600 * 30;
