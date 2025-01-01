@@ -101,7 +101,7 @@ public:
     }
 
     double get(int x, int y) {
-        return map[y][x];
+        return map.at(y).at(x);
     }
 
     Coord toCoordinate(const std::pair<int, int> &position) {
