@@ -1,3 +1,7 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+
 #include "MapData.h"
 
 MapData::MapData(const std::string &fileName) {

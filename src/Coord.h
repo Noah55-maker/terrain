@@ -1,9 +1,3 @@
-#include <cmath>
-#include <fstream>
-#include <iostream>
-#include <string>
-#include <vector>
-
 #pragma once
 
 class Coord {

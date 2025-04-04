@@ -1,8 +1,6 @@
 // Data from https://portal.opentopography.org/apidocs/#/Public/getUsgsDem
-#include <cmath>
 #include <iostream>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "Coord.h"
