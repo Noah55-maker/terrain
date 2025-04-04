@@ -1,2 +1,3 @@
 bin/**
-src/parser
+src/main
+src/*.asc

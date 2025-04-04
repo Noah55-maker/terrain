@@ -5,9 +5,14 @@
 #include <utility>
 #include <vector>
 
-#include "map.h"
+#include "Coord.h"
+#include "MapData.h"
 
 #define PI 3.14159265358979
+
+std::ostream& operator<<(std::ostream &stream, const Coord &coord) {
+    return stream << '(' << std::abs(coord.latitude) << "°" << coord.latitudeDir << ", " << std::abs(coord.longitude) << "°" << coord.longitudeDir << ')';
+}
 
 int main(int argc, char **argv) {
     std::string fileName = "larger-data.asc";
