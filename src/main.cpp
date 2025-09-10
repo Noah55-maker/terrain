@@ -35,9 +35,9 @@ int main(int argc, char **argv) {
         dirs.push_back(i * PI / 180);
     }
 
-    std::vector<std::pair<double, double> > deltas(dirs.size());
-    std::vector<std::vector<Coord> > positions(dirs.size());
-    std::vector<std::vector<double> > heightLine(dirs.size());
+    std::vector<std::pair<double, double>> deltas(dirs.size());
+    std::vector<std::vector<Coord>> positions(dirs.size());
+    std::vector<std::vector<double>> heightLine(dirs.size());
 
     for (int i = 0; i < dirs.size(); i++) {
         deltas[i] = std::make_pair(cos(dirs[i]) * map.cellSize / 2, sin(dirs[i]) * map.cellSize / 2);

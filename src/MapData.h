@@ -14,7 +14,7 @@ public:
     double cellSize;
     int NO_DATA_VALUE;
 
-    std::vector<std::vector<double> > map;
+    std::vector<std::vector<double>> map;
 
     bool isMissingData;
 

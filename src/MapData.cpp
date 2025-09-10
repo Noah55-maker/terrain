@@ -21,7 +21,7 @@ MapData::MapData(const std::string &fileName) {
     /* 30 meters in 1 arc-second, 3600 arc-seconds in 1 degree */
     data_separation = cellSize * 3600 * 30;
 
-    map = std::vector<std::vector<double> >(rows);
+    map = std::vector<std::vector<double>>(rows);
 
     isMissingData = false;
     for (int i = 0; i < rows; i++) {
